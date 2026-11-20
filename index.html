@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>EARTH DEFENDER — 지구 방어 작전</title>
+<style>
+:root{color-scheme:dark;--cyan:#62e9ff;--orange:#ffb66c;--bg:#050b1b}*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:system-ui,-apple-system,'Malgun Gothic',sans-serif;color:white;touch-action:none}
+#game{display:block;width:100vw;height:100dvh;cursor:crosshair}
+.hud{position:fixed;inset:0 0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:clamp(12px,2vw,25px);pointer-events:none;text-shadow:0 2px 12px #000}
+.brand{font-size:clamp(13px,1.65vw,20px);font-weight:900;letter-spacing:.18em;color:#dffaff}.sub{margin-top:5px;font-size:clamp(10px,1vw,12px);letter-spacing:.16em;color:#7ca2c4}
+.stats{display:flex;gap:clamp(10px,3vw,40px);text-align:right}.stat small{display:block;color:#7faccb;font-size:clamp(10px,1vw,12px);letter-spacing:.1em}.stat strong{display:block;font-size:clamp(19px,2.5vw,32px);font-variant-numeric:tabular-nums}.danger{color:#ff907d}.level{color:#83ecff}
+#hint{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:30px;background:#071c32b0;border:1px solid #2d6f8e80;color:#a9c8dc;font-size:12px;white-space:nowrap;pointer-events:none}
+.overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,#020a17c9,#040c20e8);backdrop-filter:blur(6px);padding:20px}.overlay.hidden{display:none}
+.panel{width:min(460px,100%);text-align:center;padding:clamp(25px,5vw,42px);border:1px solid #4084a96b;border-radius:24px;background:linear-gradient(145deg,#0b2543ed,#071020f2);box-shadow:0 20px 90px #0009,0 0 70px #48d7ff15}
+.badge{font-size:12px;letter-spacing:.24em;color:#75defc;font-weight:700}.panel h1{font-size:clamp(32px,6vw,56px);line-height:1.1;letter-spacing:-.04em;margin:13px 0 12px}.panel p{color:#b5cce1;line-height:1.8;font-size:14px;margin:0 auto 18px}.panel .rules{border-top:1px solid #ffffff18;border-bottom:1px solid #ffffff18;padding:13px 0;margin-bottom:22px;font-size:13px;color:#c6deec;line-height:1.8}
+button{font:inherit;background:linear-gradient(90deg,#55cfea,#64f2d8);color:#052134;font-weight:900;letter-spacing:.06em;border:0;border-radius:12px;padding:14px 32px;cursor:pointer;box-shadow:0 8px 30px #45cdec40}button:hover{filter:brightness(1.12)}button:focus-visible{outline:3px solid white;outline-offset:3px}
+.setup{margin:0 0 16px;text-align:left}.setup label{display:block;color:#b8d8ed;font-size:12px;font-weight:800;margin:0 0 7px;letter-spacing:.07em}.setup input{width:100%;padding:12px 13px;border-radius:10px;background:#07192d;border:1px solid #42718d;color:white;font:inherit;outline:none}.setup input:focus{border-color:#65edff;box-shadow:0 0 0 2px #65edff33}.characters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.character{padding:10px 5px 9px;border:1px solid #386080;border-radius:12px;background:#071a2e;color:#c6e4f5;box-shadow:none;letter-spacing:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:700}.character:hover{background:#12314d}.character.selected{background:#123952;border:2px solid #66ebff;padding:9px 4px 8px;box-shadow:0 0 18px #50dfff25;color:white}.character svg{width:65px;height:65px;max-width:100%;filter:drop-shadow(0 0 8px currentColor)}.character small{font-size:10px;color:#8eacc3;font-weight:400}.panel{max-height:calc(100dvh - 25px);overflow-y:auto}.panel h1{margin:10px 0}.panel .rules{margin-bottom:15px}#start{width:100%}#playerTag{margin-top:7px;color:#9cecff;font-size:12px;font-weight:700;letter-spacing:.04em}
+.test-sheet{width:100%;margin-top:9px;padding:10px;background:#173d58;border:1px solid #5ba7ca;color:#e1f8ff;box-shadow:none;font-size:12px}#finalScore{font-size:34px;font-weight:900;color:#67ebf9;margin:6px 0 18px}#saveStatus{font-size:12px;color:#a9c8dc;line-height:1.6;margin:0 0 14px;min-height:20px}.setup .sheet-note{font-size:11px;margin:6px 0 0;color:#8fb4cf;line-height:1.5;overflow-wrap:anywhere}
+@media(max-width:560px){.hud{padding:12px}.brand{max-width:130px}.stats{gap:13px}#hint{font-size:10px;bottom:10px}.stat strong{font-size:21px}}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="우주선 슈팅 게임"></canvas>
+<div class="hud"><div><div class="brand">✦ EARTH DEFENDER</div><div class="sub">지구 방어 작전</div><div id="playerTag"></div></div><div class="stats"><div class="stat"><small>점수</small><strong id="score">0</strong></div><div class="stat"><small>레벨</small><strong id="level" class="level">1</strong></div><div class="stat"><small>지구 피격</small><strong id="misses" class="danger">0 / 3</strong></div></div></div>
+<div id="hint">이동: 방향키 / WASD / 마우스 / 터치 &nbsp; · &nbsp; 공격: 스페이스 / 클릭 / 터치</div>
+<div class="overlay" id="overlay"><section class="panel"><div class="badge" id="eyebrow">MISSION 01 · EARTH DEFENSE</div><h1 id="heading">지구를 지켜라!</h1><p id="description">우주에서 떨어지는 암석을 미사일로 격파하세요.<br>점수가 올라갈수록 암석이 더 많고 빨라집니다.</p><div class="rules" id="rules">🚀 암석과 충돌하면 즉시 게임 오버<br>🌍 암석이 지구에 3번 떨어져도 게임 오버<br>🎯 암석 격파 시 100점 획득</div><div class="setup" id="setup"><label for="playerName">플레이어 이름</label><input id="playerName" type="text" placeholder="이름 또는 닉네임 입력" maxlength="16" autocomplete="nickname" value="우주 수호자"/><label style="margin-top:13px">전투기 선택</label><div class="characters" id="characters"><button type="button" class="character selected" data-ship="blue" aria-pressed="true"><svg viewBox="0 0 70 70" aria-hidden="true"><path d="M35 4L46 34L62 51L55 60L40 49L35 55L30 49L15 60L8 51L24 34Z" fill="#a9efff" stroke="#34bef4" stroke-width="3"/><path d="M35 17L41 37L35 46L29 37Z" fill="#177caf"/></svg>블루 팔콘<small>균형형</small></button><button type="button" class="character" data-ship="red" aria-pressed="false"><svg viewBox="0 0 70 70" aria-hidden="true"><path d="M35 3L46 29L63 47L57 60L41 49L35 56L29 49L13 60L7 47L24 29Z" fill="#ffc2a5" stroke="#ff6b62" stroke-width="3"/><path d="M35 14L42 39L35 48L28 39Z" fill="#b63742"/></svg>레드 코멧<small>돌격형</small></button><button type="button" class="character" data-ship="gold" aria-pressed="false"><svg viewBox="0 0 70 70" aria-hidden="true"><path d="M35 4L46 34L62 51L55 60L40 49L35 55L30 49L15 60L8 51L24 34Z" fill="#fff1b3" stroke="#ffbf43" stroke-width="3"/><path d="M35 17L41 37L35 46L29 37Z" fill="#c68a24"/></svg>골드 스타<small>정예형</small></button></div><div style="margin-top:13px"><label for="sheetUrl">구글 시트 기록용 웹앱 URL (선택)</label><input id="sheetUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" spellcheck="false"/><p class="sheet-note">웹 앱 주소(/exec)를 입력하세요. 최초 연결 시 이 브라우저에 저장됩니다.</p><button type="button" id="testSheet" class="test-sheet">연결 테스트 기록 보내기</button></div></div><div id="finalScore" style="display:none"></div><div id="saveStatus" role="status" aria-live="polite"></div><button id="start">게임 시작</button></section></div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score'),levelEl=document.getElementById('level'),missEl=document.getElementById('misses'),overlay=document.getElementById('overlay'),startBtn=document.getElementById('start');
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rand=(a,b)=>a+Math.random()*(b-a);
+let W=innerWidth,H=innerHeight,dpr=1,last=0,state='menu',score=0,level=1,misses=0,spawnTimer=0,fireTimer=0,elapsed=0,shake=0;
+let stars=[],rocks=[],bullets=[],particles=[],texts=[];
+const ship={x:0,y:0,r:18,speed:390,tx:0,ty:0,inv:0};
+const keys=new Set();let pointerActive=false,pointerFire=false;let selectedShip='blue',playerName='우주 수호자';const shipNames={blue:'블루 팔콘',red:'레드 코멧',gold:'골드 스타'};const shipColors={blue:{body:'#d9faff',edge:'#43c8f2',glass:'#267cb4',glow:'#54dfff'},red:{body:'#ffcab7',edge:'#ff665c',glass:'#ba3947',glow:'#ff7966'},gold:{body:'#fff0ba',edge:'#ffc048',glass:'#ad7725',glow:'#ffcd65'}};
+const nameInput=document.getElementById('playerName'),setup=document.getElementById('setup'),playerTag=document.getElementById('playerTag'),sheetUrlInput=document.getElementById('sheetUrl'),saveStatus=document.getElementById('saveStatus');
+try{sheetUrlInput.value=localStorage.getItem('earth-defender-sheet-webapp')||''}catch(_){}
+function getSheetUrl(){const url=sheetUrlInput.value.trim();if(!/^https:\/\/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/exec$/.test(url))return '';return url}
+function storeSheetUrl(){try{localStorage.setItem('earth-defender-sheet-webapp',sheetUrlInput.value.trim())}catch(_){}}
+sheetUrlInput.addEventListener('change',storeSheetUrl);
+// HTML 파일(file://) 환경에서도 요청을 보낼 수 있도록 숨겨진 iframe에 FORM POST합니다.
+// 브라우저는 타 도메인의 응답을 읽을 수 없으므로 저장 성공 여부는 시트에서 확인해야 합니다.
+function sendRecord(record){
+ const url=getSheetUrl();
+ if(!url){saveStatus.textContent='웹앱 URL을 확인해 주세요. /exec로 끝나는 배포 URL이 필요합니다.';return false;}
+ storeSheetUrl();
+ const id='sheetFrame_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+ const iframe=document.createElement('iframe');
+ iframe.name=id;iframe.title='구글 시트 전송';iframe.style.display='none';document.body.appendChild(iframe);
+ const form=document.createElement('form');form.method='POST';form.action=url;form.target=id;form.style.display='none';
+ for(const [key,value] of Object.entries(record)){const input=document.createElement('input');input.type='hidden';input.name=key;input.value=String(value);form.appendChild(input)}
+ document.body.appendChild(form);
+ try{form.submit();saveStatus.textContent='기록 전송을 요청했습니다. 구글 시트의 「게임성적」 탭에서 저장 여부를 확인하세요.';return true;}
+ catch(error){console.warn('Form submission error:',error);saveStatus.textContent='전송 요청 중 오류가 발생했습니다. 웹앱 주소를 확인해 주세요.';return false;}
+ finally{form.remove();setTimeout(()=>iframe.remove(),60000)}
+}
+function saveResult(reason){sendRecord({recordId:String(Date.now())+'-'+Math.random().toString(36).slice(2,10),playerName,ship:shipNames[selectedShip],score,level,misses,reason,durationSeconds:Math.round(elapsed),playedAt:new Date().toISOString()})}
+document.getElementById('testSheet').addEventListener('click',()=>{
+ const name=nameInput.value.trim().slice(0,16)||'테스트 플레이어';
+ sendRecord({recordId:'TEST-'+Date.now(),playerName:name,ship:shipNames[selectedShip],score:0,level:1,misses:0,reason:'연동 테스트',durationSeconds:0,playedAt:new Date().toISOString()});
+});
+document.querySelectorAll('.character').forEach(btn=>btn.addEventListener('click',()=>{selectedShip=btn.dataset.ship;document.querySelectorAll('.character').forEach(b=>{b.classList.toggle('selected',b===btn);b.setAttribute('aria-pressed',String(b===btn))})}));
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);stars=Array.from({length:Math.min(200,Math.ceil(W*H/7000))},()=>({x:Math.random()*W,y:Math.random()*H,r:rand(.4,1.8),s:rand(7,36),a:rand(.25,.85)}));ship.x=clamp(ship.x||W/2,22,W-22);ship.y=clamp(ship.y||H*.78,H*.20,H-60);ship.tx=ship.x;ship.ty=ship.y}addEventListener('resize',resize);resize();
+function start(){storeSheetUrl();saveStatus.textContent='';playerName=nameInput.value.trim().slice(0,16)||'우주 수호자';nameInput.value=playerName;playerTag.textContent=playerName+' · '+shipNames[selectedShip];setup.style.display='none';score=0;level=1;misses=0;elapsed=0;spawnTimer=.55;fireTimer=0;shake=0;rocks=[];bullets=[];particles=[];texts=[];ship.x=W/2;ship.y=H*.76;ship.tx=ship.x;ship.ty=ship.y;pointerActive=false;pointerFire=false;keys.clear();state='playing';overlay.classList.add('hidden');updateHud()}
+function updateHud(){scoreEl.textContent=score.toLocaleString('ko-KR');levelEl.textContent=level;missEl.textContent=misses+' / 3'}
+function end(reason){if(state!=='playing')return;state='over';document.getElementById('eyebrow').textContent='MISSION FAILED';document.getElementById('heading').textContent='게임 오버';document.getElementById('description').textContent=reason;document.getElementById('rules').style.display='none';let f=document.getElementById('finalScore');f.style.display='block';f.textContent=playerName+' · '+score.toLocaleString('ko-KR')+'점 · 레벨 '+level;setup.style.display='block';startBtn.textContent='다시 도전';overlay.classList.remove('hidden');void saveResult(reason)}
+function spawn(){const r=rand(14,31);const v=rand(75,120)+level*18;const sides=Math.floor(rand(8,13));let verts=Array.from({length:sides},()=>rand(.75,1.15));rocks.push({x:rand(r+8,W-r-8),y:-r-8,r,vx:rand(-16,16),vy:v,rotation:rand(0,6.28),spin:rand(-1.6,1.6),verts,hp:1})}
+function blast(x,y,color,count=18,power=1){for(let i=0;i<count;i++){const a=rand(0,Math.PI*2),s=rand(35,190)*power,life=rand(.25,.75);particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life,max:life,size:rand(1.5,5),color})}}
+function shoot(){bullets.push({x:ship.x,y:ship.y-24,vy:-760,r:4});blast(ship.x,ship.y-22,'#66edff',3,.3)}
+function circleHit(a,b){let dx=a.x-b.x,dy=a.y-b.y;return dx*dx+dy*dy<(a.r+b.r)*(a.r+b.r)}
+function update(dt){for(let s of stars){s.y+=s.s*dt*(state==='playing'?1.2:.35);if(s.y>H){s.y=0;s.x=rand(0,W)}}for(let p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.max(0,1-2*dt);p.vy*=Math.max(0,1-2*dt);p.life-=dt}particles=particles.filter(p=>p.life>0);for(let t of texts){t.y-=35*dt;t.life-=dt}texts=texts.filter(t=>t.life>0);shake=Math.max(0,shake-dt*20);
+if(state!=='playing')return;
+elapsed+=dt;level=1+Math.floor(score/600);updateHud();spawnTimer-=dt;const interval=Math.max(.23,1.15-level*.085);while(spawnTimer<=0){spawn();spawnTimer+=interval}
+let dx=(keys.has('ArrowRight')||keys.has('KeyD')?1:0)-(keys.has('ArrowLeft')||keys.has('KeyA')?1:0),dy=(keys.has('ArrowDown')||keys.has('KeyS')?1:0)-(keys.has('ArrowUp')||keys.has('KeyW')?1:0);
+if(dx||dy){pointerActive=false;let norm=Math.hypot(dx,dy);ship.x+=dx/norm*ship.speed*dt;ship.y+=dy/norm*ship.speed*dt}else if(pointerActive){let f=Math.min(1,dt*13);ship.x+=(ship.tx-ship.x)*f;ship.y+=(ship.ty-ship.y)*f}
+ship.x=clamp(ship.x,24,W-24);ship.y=clamp(ship.y,Math.max(90,H*.20),H-64);
+fireTimer-=dt;if((keys.has('Space')||pointerFire)&&fireTimer<=0){shoot();fireTimer=.16}
+for(let b of bullets)b.y+=b.vy*dt;bullets=bullets.filter(b=>b.y>-25);
+for(let a of rocks){a.x+=a.vx*dt;a.y+=a.vy*dt;a.rotation+=a.spin*dt;if(a.x<a.r||a.x>W-a.r)a.vx*=-1}
+for(let i=rocks.length-1;i>=0;i--){let a=rocks[i];let hit=false;for(let j=bullets.length-1;j>=0;j--){if(circleHit(a,bullets[j])){bullets.splice(j,1);hit=true;break}}if(hit){blast(a.x,a.y,'#ffad61',25,1.2);blast(a.x,a.y,'#ffc786',10,.6);rocks.splice(i,1);score+=100;shake=Math.max(shake,4);texts.push({x:a.x,y:a.y,life:.75,text:'+100'});continue}if(circleHit({x:ship.x,y:ship.y,r:ship.r*.75},a)){blast(ship.x,ship.y,'#5ce8ff',46,1.8);blast(a.x,a.y,'#ffb36f',28,1.2);shake=15;end('전투기가 암석과 충돌했습니다.');return}if(a.y-a.r>H-41){rocks.splice(i,1);misses++;shake=10;blast(a.x,H-35,'#ff755c',40,1.4);texts.push({x:a.x,y:H-90,life:1.0,text:'지구 피격!'});updateHud();if(misses>=3){end('암석이 지구에 3번 충돌했습니다.');return}}}
+}
+function drawBackdrop(){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#050a18');g.addColorStop(.65,'#06142b');g.addColorStop(1,'#0a2140');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);for(let s of stars){ctx.globalAlpha=s.a;ctx.fillStyle='#c4e9ff';ctx.fillRect(s.x,s.y,s.r,s.r)}ctx.globalAlpha=1;
+const glow=ctx.createRadialGradient(W/2,H+70,10,W/2,H+70,Math.max(W*.65,400));glow.addColorStop(0,'#226f9a65');glow.addColorStop(.5,'#0e41603a');glow.addColorStop(1,'#00000000');ctx.fillStyle=glow;ctx.fillRect(0,H*.3,W,H*.7);
+ctx.save();ctx.beginPath();ctx.ellipse(W/2,H+Math.max(90,W*.11),Math.max(W*.75,420),Math.max(130,W*.22),0,0,Math.PI*2);let earth=ctx.createLinearGradient(0,H-120,0,H);earth.addColorStop(0,'#358fbe');earth.addColorStop(.65,'#0c416d');earth.addColorStop(1,'#082440');ctx.fillStyle=earth;ctx.shadowBlur=26;ctx.shadowColor='#36adff';ctx.fill();ctx.restore();ctx.fillStyle='#7fe8ff';ctx.globalAlpha=.3;ctx.fillRect(0,H-40,W,1);ctx.globalAlpha=1}
+function drawShip(){const skin=shipColors[selectedShip];ctx.save();ctx.translate(ship.x,ship.y);let flick=.72+Math.random()*.45;let jet=ctx.createLinearGradient(0,12,0,45);jet.addColorStop(0,'#96faff');jet.addColorStop(.5,'#42b7ff');jet.addColorStop(1,'#308bff00');ctx.fillStyle=jet;ctx.beginPath();ctx.moveTo(-8,12);ctx.lineTo(0,37*flick);ctx.lineTo(8,12);ctx.fill();ctx.shadowBlur=22;ctx.shadowColor=skin.glow;ctx.fillStyle=skin.body;ctx.strokeStyle=skin.edge;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(0,-26);ctx.lineTo(9,-3);ctx.lineTo(23,13);ctx.lineTo(20,20);ctx.lineTo(7,14);ctx.lineTo(0,19);ctx.lineTo(-7,14);ctx.lineTo(-20,20);ctx.lineTo(-23,13);ctx.lineTo(-9,-3);ctx.closePath();ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle=skin.glass;ctx.beginPath();ctx.moveTo(0,-16);ctx.lineTo(5,1);ctx.lineTo(0,9);ctx.lineTo(-5,1);ctx.closePath();ctx.fill();ctx.restore()}
+function drawRocks(){for(let a of rocks){ctx.save();ctx.translate(a.x,a.y);ctx.rotate(a.rotation);ctx.beginPath();a.verts.forEach((v,i)=>{const ang=i/a.verts.length*Math.PI*2,px=Math.cos(ang)*a.r*v,py=Math.sin(ang)*a.r*v;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)});ctx.closePath();ctx.fillStyle='#665a59';ctx.strokeStyle='#d39b75';ctx.lineWidth=2;ctx.shadowBlur=12;ctx.shadowColor='#e17a3e55';ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.strokeStyle='#332c32';ctx.lineWidth=2;ctx.beginPath();ctx.arc(-a.r*.18,-a.r*.12,a.r*.2,0,6.283);ctx.moveTo(a.r*.26,a.r*.15);ctx.arc(a.r*.26,a.r*.15,a.r*.13,0,6.283);ctx.stroke();ctx.restore()}}
+function draw(){ctx.save();if(shake)ctx.translate(rand(-shake,shake),rand(-shake,shake));drawBackdrop();for(let b of bullets){ctx.shadowBlur=14;ctx.shadowColor='#69ffff';ctx.fillStyle='#aaffff';ctx.fillRect(b.x-2,b.y-12,4,18)}ctx.shadowBlur=0;drawRocks();if(state==='playing')drawShip();for(let p of particles){ctx.globalAlpha=p.life/p.max;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life/p.max,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;ctx.font='bold 18px system-ui';ctx.textAlign='center';for(let t of texts){ctx.globalAlpha=Math.min(1,t.life*2);ctx.fillStyle=t.text==='지구 피격!'?'#ff8479':'#84f9ee';ctx.fillText(t.text,t.x,t.y)}ctx.restore();ctx.globalAlpha=1}
+function frame(now){let dt=last?Math.min(.033,(now-last)/1000):.016;last=now;update(dt);draw();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+startBtn.addEventListener('click',start);
+addEventListener('keydown',e=>{if(e.target===nameInput)return;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();keys.add(e.code);if(state!=='playing'&&(e.code==='Enter'||e.code==='Space'))start()});addEventListener('keyup',e=>keys.delete(e.code));addEventListener('blur',()=>{keys.clear();pointerFire=false});
+function place(e){ship.tx=clamp(e.clientX,24,W-24);ship.ty=clamp(e.clientY,Math.max(90,H*.20),H-64);pointerActive=true}
+canvas.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&state==='playing')place(e);else if(pointerFire&&state==='playing')place(e)});
+canvas.addEventListener('pointerdown',e=>{if(state!=='playing')return;place(e);pointerFire=true;canvas.setPointerCapture?.(e.pointerId)});
+canvas.addEventListener('pointerup',()=>pointerFire=false);canvas.addEventListener('pointercancel',()=>pointerFire=false);
+})();
+</script>
+</body>
+</html>
